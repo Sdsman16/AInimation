@@ -12,30 +12,34 @@ class ResponseExecutor:
 
     def execute_command(self, command: str) -> bool:
         """Execute a single Blender command."""
+        print(f"Executing command: '{command}'")
         try:
             # Parse command type and execute
-            if command.startswith("CREATE_OBJECT:"):
+            if command.startswith("CREATE_OBJECT"):
                 return self._create_object(command)
-            elif command.startswith("MODIFY_PROPERTY:"):
+            elif command.startswith("MODIFY_PROPERTY"):
                 return self._modify_property(command)
-            elif command.startswith("SET_FRAME:"):
+            elif command.startswith("SET_FRAME"):
                 return self._set_frame(command)
-            elif command.startswith("ADD_KEYFRAME:"):
+            elif command.startswith("ADD_KEYFRAME"):
                 return self._add_keyframe(command)
             else:
                 self.errors.append(f"Unknown command: {command}")
                 return False
         except Exception as e:
             self.errors.append(str(e))
+            print(f"Exception: {e}")
             return False
 
     def _create_object(self, command: str) -> bool:
-        """Create a new object. Format: CREATE_OBJECT:type:name"""
+        """Create a new object. Format: CREATE_OBJECT:type:name or CREATE_OBJECT:MESH:name"""
         parts = command.split(":")
+        print(f"CREATE_OBJECT parts: {parts}")
         if len(parts) < 3:
             self.errors.append("Invalid CREATE_OBJECT format")
             return False
 
+        # Handle case where it's just CREATE_OBJECT:MESH:name
         obj_type = parts[1]
         obj_name = parts[2]
 
@@ -128,6 +132,11 @@ class ResponseExecutor:
                     success_count += 1
                 else:
                     fail_count += 1
+                    print(f"Command failed: {command}")
+                    print(f"Errors: {self.errors[-3:]}")  # Print last 3 errors
+
+        if fail_count > 0:
+            print(f"AI Response was:\n{response[:500]}...")  # Print first 500 chars of response
 
         return success_count, fail_count
 
