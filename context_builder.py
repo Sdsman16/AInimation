@@ -106,6 +106,12 @@ def _get_mesh_bounds(mesh_obj) -> dict:
         'center_z': (min(z_vals) + max(z_vals)) / 2,
         'length_y': y_range,
         'height_z': z_range,
+        # Centroid for accurate center of mass
+        'centroid_y': round(sum(v.y for v in verts) / len(verts), 3),
+        'centroid_z': round(sum(v.z for v in verts) / len(verts), 3),
+        # Asymmetry detection (left vs right)
+        'left_volume': len([v for v in verts if v.x < (min(x_vals) + max(x_vals)) / 2]),
+        'right_volume': len([v for v in verts if v.x > (min(x_vals) + max(x_vals)) / 2]),
     }
 
     # Find extremity positions (head, tail, feet)
@@ -152,14 +158,36 @@ def _sample_mesh_profile(verts: list, bounds: dict) -> list:
             z_at_pos = [v.z for v in candidates]
             samples.append({
                 'position': pos,
-                'y_approx': y_target,
-                'width': max(x_at_pos) - min(x_at_pos),
-                'height': max(z_at_pos) - min(z_at_pos),
-                'z_min': min(z_at_pos),
-                'z_max': max(z_at_pos),
+                'y_approx': round(y_target, 3),
+                'width': round(max(x_at_pos) - min(x_at_pos), 3),
+                'height': round(max(z_at_pos) - min(z_at_pos), 3),
+                'z_min': round(min(z_at_pos), 3),
+                'z_max': round(max(z_at_pos), 3),
+                # Body zone mapping for bone naming
+                'zone': _get_body_zone(pos),
+                # Left side ground height (for leg attachment)
+                'left_ground_z': round(min([v.z for v in candidates if v.x < bounds['center_x']]), 3) if any(v.x < bounds['center_x'] for v in candidates) else round(min(z_at_pos), 3),
             })
 
     return samples
+
+
+def _get_body_zone(position: float) -> str:
+    """Map profile position to body zone for bone naming."""
+    if position < 0.15:
+        return "head"
+    elif position < 0.25:
+        return "neck"
+    elif position < 0.4:
+        return "front_limb_attach"
+    elif position < 0.6:
+        return "spine_pelvis"
+    elif position < 0.75:
+        return "back_limb_attach"
+    elif position < 0.9:
+        return "tail_base"
+    else:
+        return "tail_tip"
 
 
 def get_animation_context(context) -> dict:
