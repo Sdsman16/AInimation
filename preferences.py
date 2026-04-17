@@ -3,6 +3,8 @@ User preferences for AI Assistant addon
 """
 import bpy
 
+ADDON_MODULE = "ai_assistant_blender"
+
 
 class AI_OT_validate_api_key(bpy.types.Operator):
     """Validate the API key"""
@@ -11,7 +13,7 @@ class AI_OT_validate_api_key(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        prefs = context.preferences.addons.get("ai_assistant_blender")
+        prefs = bpy.context.preferences.addons.get(ADDON_MODULE)
         if not prefs:
             self.report({'ERROR'}, "Addon not found")
             return {'FINISHED'}
@@ -35,7 +37,7 @@ class AI_OT_validate_api_key(bpy.types.Operator):
 
 class AIAssistantPreferences(bpy.types.AddonPreferences):
     """API key and settings for AI Assistant."""
-    bl_idname = __name__.split(".")[0]
+    bl_idname = ADDON_MODULE
 
     api_key: bpy.props.StringProperty(
         name="Anthropic API Key",
@@ -68,7 +70,7 @@ class AIAssistantPreferences(bpy.types.AddonPreferences):
 
 def get_preferences():
     """Get addon preferences."""
-    return bpy.context.preferences.addons.get(__name__.split(".")[0])
+    return bpy.context.preferences.addons.get(ADDON_MODULE)
 
 
 def register():
