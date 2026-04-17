@@ -36,6 +36,7 @@ def register():
         name="AI Message",
         description="Message to send to AI assistant",
         default="",
+        maxlen=1000,
     )
 
     bpy.types.Scene.ai_chat_history = bpy.props.CollectionProperty(
