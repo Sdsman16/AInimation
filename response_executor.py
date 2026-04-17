@@ -25,8 +25,12 @@ class ResponseExecutor:
                 return self._add_keyframe(command)
             elif command.startswith("ADD_BONE"):
                 return self._add_bone(command)
+            elif command.startswith("CREATE_BONE"):
+                return self._add_bone(command)  # Alias for ADD_BONE
             elif command.startswith("SET_BONE_PARENT"):
                 return self._set_bone_parent(command)
+            elif command.startswith("SET_PARENT"):
+                return self._set_bone_parent(command)  # Alias
             else:
                 self.errors.append(f"Unknown command: {command}")
                 return False
@@ -67,7 +71,7 @@ class ResponseExecutor:
         return False
 
     def _add_bone(self, command: str) -> bool:
-        """Add bone to armature. Format: ADD_BONE:armature_name:bone_name:head_x,head_y,head_z:tail_x,tail_y,tail_z"""
+        """Add bone to armature. Format: ADD_BONE:armature_name:bone_name:head_x,y,z:tail_x,y,z"""
         parts = command.split(":")
         if len(parts) < 4:
             self.errors.append("Invalid ADD_BONE format")
@@ -75,15 +79,15 @@ class ResponseExecutor:
 
         arm_name = parts[1]
         bone_name = parts[2]
-        head_str = parts[3]
-        tail_str = parts[4] if len(parts) > 4 else parts[3]  # Default tail to head if not provided
+        head_str = parts[3].strip()
+        tail_str = parts[4].strip() if len(parts) > 4 else head_str  # Default tail to head if not provided
 
-        # Parse head and tail positions
+        # Parse head and tail positions (handle spaces after commas)
         try:
-            head = [float(x) for x in head_str.split(",")]
-            tail = [float(x) for x in tail_str.split(",")]
+            head = [float(x.strip()) for x in head_str.strip("[]").split(",")]
+            tail = [float(x.strip()) for x in tail_str.strip("[]").split(",")]
         except:
-            self.errors.append(f"Invalid bone coordinates")
+            self.errors.append(f"Invalid bone coordinates: {head_str}, {tail_str}")
             return False
 
         arm_obj = bpy.data.objects.get(arm_name)
