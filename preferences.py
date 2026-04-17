@@ -3,7 +3,7 @@ User preferences for AI Assistant addon
 """
 import bpy
 
-ADDON_MODULE = "ai_assistant_blender"
+ADDON_MODULE = "AInimation"
 
 
 class AI_OT_validate_api_key(bpy.types.Operator):

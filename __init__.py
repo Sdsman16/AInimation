@@ -5,7 +5,7 @@ An AI assistant plugin for Blender that can help with scene queries,
 modifications, and animation analysis using Claude models.
 """
 bl_info = {
-    "name": "AI Assistant",
+    "name": "AInimation",
     "author": "Your Name",
     "version": (1, 0, 1),
     "blender": (4, 0, 0),
