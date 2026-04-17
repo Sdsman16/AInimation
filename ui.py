@@ -101,7 +101,7 @@ class AI_PT_assistant_panel(Panel):
                         history_box.label(text=f"You: {line[:50]}", icon='USER')
                 else:
                     for line in msg.content.split('\n')[:3]:
-                        history_box.label(text=f"AI: {line[:50]}", icon='ROBOT')
+                        history_box.label(text=f"AI: {line[:50]}", icon='INFO')
                     if len(msg.content.split('\n')) > 3:
                         history_box.label(text="  ... (more)", icon='INFO')
 
@@ -178,9 +178,9 @@ class AI_PT_assistant_panel(Panel):
         layout.separator()
         layout.label(text="Weight Painting:", icon='BRUSH_WEIGHT')
         box = layout.box()
-        box.label(text="Auto Weight:", icon='AUTOMATIC')
-        box.operator("ai.auto_weight", text="Auto from Distance", icon='AUTOMATIC')
-        box.operator("ai.envelope_weights", text="Bone Envelope", icon='SPHERE')
+        box.label(text="Auto Weight:", icon='OPTIONS')
+        box.operator("ai.auto_weight", text="Auto from Distance", icon='OPTIONS')
+        box.operator("ai.envelope_weights", text="Bone Envelope", icon='MODIFIER')
 
         box = layout.box()
         box.label(text="Clean & Optimize:", icon='WINDOW')
@@ -196,7 +196,7 @@ class AI_PT_assistant_panel(Panel):
 
         # Game Engine Export
         layout.separator()
-        layout.label(text="Game Engine Export:", icon='GAME')
+        layout.label(text="Game Engine Export:", icon='MODIFIER')
         box = layout.box()
         box.label(text="Skeleton Validation:", icon='VIEWZOOM')
         row = box.row(align=True)
@@ -212,10 +212,10 @@ class AI_PT_assistant_panel(Panel):
         box.operator("ai.batch_export_animations", text="Batch Export All", icon='FILE')
 
         box = layout.box()
-        box.label(text="Animation Optimization:", icon='DECORATE')
+        box.label(text="Animation Optimization:", icon='MODIFIER')
         row = box.row(align=True)
-        row.operator("ai.simplify_animation", text="Simplify", icon='LONGDISPLAY')
-        row.operator("ai.compress_animation", text="Compress", icon='STRING')
+        row.operator("ai.simplify_animation", text="Simplify", icon='IPO_EASE_IN_OUT')
+        row.operator("ai.compress_animation", text="Compress", icon='IPO_CONSTANT')
         row = box.row(align=True)
         if hasattr(context.scene, "ai_anim_fps"):
             row.prop(context.scene, "ai_anim_fps", text="FPS")
@@ -244,7 +244,7 @@ class AI_PT_assistant_panel(Panel):
             obj = context.active_object
             layout.label(text=f"Active: {obj.name}", icon='OBJECT_DATA')
         if context.selected_objects:
-            layout.label(text=f"Selected: {len(context.selected_objects)} objects", icon='SELECT_SET')
+            layout.label(text=f"Selected: {len(context.selected_objects)} objects", icon='SELECT_EXTEND')
 
 
 def register():
