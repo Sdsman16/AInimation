@@ -254,7 +254,7 @@ def identify_segments(vertices: List[Vector], extremities: Dict, center_x: float
         if len(verts) < 10:
             continue
 
-        center = sum(v for v in verts, Vector((0, 0, 0))) / len(verts)
+        center = sum((v for v in verts), Vector((0, 0, 0))) / len(verts)
         extent_y = max(v.y for v in verts) - min(v.y for v in verts)
         extent_z = max(v.z for v in verts) - min(v.z for v in verts)
         extent_x = max(v.x for v in verts) - min(v.x for v in verts)
