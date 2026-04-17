@@ -129,8 +129,37 @@ def _get_mesh_bounds(mesh_obj) -> dict:
     }
     bounds['foot_height'] = min(z_vals)
 
-    # Sample vertices along the body for shape visualization
-    bounds['sampled_profile'] = _sample_mesh_profile(verts, bounds)
+    # Sample vertices along the body for shape visualization (must be before orientation detection)
+    sampled_profile = _sample_mesh_profile(verts, bounds)
+    bounds['sampled_profile'] = sampled_profile
+
+    # Determine orientation: which end is head vs tail
+    # The end with smaller cross-section width is likely the head or tail
+    # Legs typically attach closer to head (front), so front_limb_attach zone helps orient
+    front_profile = next((s for s in sampled_profile if s['position'] == 0.0), None)
+    back_profile = next((s for s in sampled_profile if s['position'] == 1.0), None)
+
+    if front_profile and back_profile:
+        front_width = front_profile.get('width', 0)
+        back_width = back_profile.get('width', 0)
+        bounds['front_width'] = front_width
+        bounds['back_width'] = back_width
+        # Narrower end is head or tail (typically one is narrower than body)
+        if front_width < back_width * 0.7:
+            bounds['narrow_end'] = 'front'
+            bounds['wide_end'] = 'back'
+        elif back_width < front_width * 0.7:
+            bounds['narrow_end'] = 'back'
+            bounds['wide_end'] = 'front'
+        else:
+            # Neither is dramatically narrower - use front as default head
+            bounds['narrow_end'] = 'front'
+            bounds['wide_end'] = 'back'
+        # Limb attachment Y helps confirm orientation
+        bounds['limb_attach_y'] = bounds['min_y'] + y_range * 0.4  # Typical front-limb position
+        bounds['limb_attach_confidence'] = abs(front_width - back_width) / max(front_width, back_width)  # How sure we are
+
+    return bounds
 
     return bounds
 

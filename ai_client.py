@@ -189,9 +189,20 @@ BOUNDS:
 - mesh_bounds.tail_position.y = back-most vertex Y (use for tail bones)
 - mesh_bounds.foot_height = lowest Z point (ground level for legs)
 
+ORIENTATION DETECTION:
+- narrow_end: which end (front/back) is narrower - this is likely head or tail
+- wide_end: which end is wider - typically body/torso
+- limb_attach_y: Y position where legs typically attach
+- limb_attach_confidence: how certain we are (0-1, higher = more certain)
+
+IMPORTANT: When narrow_end='front', position 0.0 is the HEAD
+When narrow_end='back', position 1.0 is the HEAD
+
+Use narrow_end to determine which direction is head vs tail.
+
 PROFILE DATA (7 cross-sections from front=0.0 to back=1.0):
 Each profile entry contains:
-- position: 0.0=front(HEAD), 1.0=back(TAIL)
+- position: 0.0=front, 1.0=back
 - y_approx: actual Y coordinate
 - width: how wide model is at this point
 - height: total Z height at this point
@@ -201,7 +212,7 @@ Each profile entry contains:
 - left_ground_z: ground height on left side for leg bone height
 
 BONE PLACEMENT RULES:
-1. HEAD: At position 0.0, use head_position.y for Y, z_max for bone height
+1. HEAD: At narrow_end position, use head_position.y for Y, z_max for bone height
 2. NECK: position 0.15-0.25, connect head to spine
 3. SPINE/PELVIS: position 0.4-0.6, widest part of body
 4. TAIL: position 0.7-1.0, gradually narrows
