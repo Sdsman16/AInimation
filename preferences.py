@@ -26,11 +26,10 @@ class AIAssistantPreferences(bpy.types.AddonPreferences):
         default='claude-opus-4-7',
     )
 
-    def draw(self, _ctx):
-        layout = bpy.context.layout
-        layout.label(text="AI Assistant Settings:")
-        layout.prop(self, "api_key")
-        layout.prop(self, "model")
+    def draw(self, context):
+        self.layout.label(text="AI Assistant Settings:")
+        self.layout.prop(self, "api_key")
+        self.layout.prop(self, "model")
 
 
 def get_preferences():
