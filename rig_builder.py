@@ -23,10 +23,13 @@ class DinoRigBuilder:
     def build_rig(self, rig_name: str = "DinoRig") -> bpy.types.Object:
         """Main entry point - build complete rig."""
 
-        # Create armature
+        # Create armature at mesh location so bones align
         arm_data = bpy.data.armatures.new(name=rig_name)
         self.armature = bpy.data.objects.new(name=rig_name, object_data=arm_data)
         bpy.context.scene.collection.objects.link(self.armature)
+
+        # Match armature location to mesh
+        self.armature.matrix_world = self.mesh.matrix_world.copy()
 
         # Enter edit mode to create bones
         bpy.context.view_layer.objects.active = self.armature
