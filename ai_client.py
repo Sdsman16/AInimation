@@ -1,17 +1,21 @@
 """
-Blender AI Assistant - Claude Integration
+Blender AI Assistant - Claude Integration (using requests)
 """
 import bpy
-import anthropic
+import json
+from typing import Dict, List
 from .context_builder import build_blender_context, get_animation_context
 from .animation_analyzer import get_action_summary, detect_seamless_loop, get_loop_suggestions
+
+ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
+ANTHROPIC_API_VERSION = "2023-06-01"
 
 
 class AIClient:
     def __init__(self, api_key: str):
-        self.client = anthropic.Anthropic(api_key=api_key)
+        self.api_key = api_key
 
-    def send_message(self, user_message: str, context: dict, model: str = "claude-opus-4-7") -> str:
+    def send_message(self, user_message: str, context: dict, model: str = "claude-sonnet-4-7") -> str:
         """Send message to Claude with Blender context."""
 
         system_prompt = self._build_system_prompt(context)
@@ -21,16 +25,48 @@ class AIClient:
         if anim_context.get('armatures'):
             system_prompt += "\n\n" + self._build_armature_prompt(anim_context['armatures'])
 
-        message = self.client.messages.create(
-            model=model,
-            max_tokens=2048,
-            system=system_prompt,
-            messages=[
+        # Use requests directly to call Anthropic API
+        try:
+            import requests
+        except ImportError:
+            return "Error: requests module not available in Blender's Python environment."
+
+        headers = {
+            "x-api-key": self.api_key,
+            "anthropic-version": ANTHROPIC_API_VERSION,
+            "content-type": "application/json",
+        }
+
+        payload = {
+            "model": model,
+            "max_tokens": 2048,
+            "system": system_prompt,
+            "messages": [
                 {"role": "user", "content": user_message}
             ]
-        )
+        }
 
-        return message.content[0].text
+        try:
+            response = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+
+            # Handle both newer API response format and legacy
+            if "content" in data:
+                for block in data.get("content", []):
+                    if block.get("type") == "text":
+                        return block.get("text", "")
+            elif "completion" in data:
+                return data["completion"]
+
+            return str(data)
+
+        except requests.exceptions.Timeout:
+            return "Error: Request timed out. Please try again."
+        except requests.exceptions.HTTPError as e:
+            return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+        except Exception as e:
+            return f"Error: {str(e)}"
 
     def _build_system_prompt(self, context: dict) -> str:
         """Build system prompt with current Blender state."""
@@ -75,7 +111,7 @@ class AIClient:
         collections = context.get('collections', [])
         if collections:
             blender_info.append("\n=== COLLECTIONS ===")
-            for col in collections[:10]:  # Limit to 10
+            for col in collections[:10]:
                 blender_info.append(f"- {col}")
 
         return "\n".join(blender_info)

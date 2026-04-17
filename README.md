@@ -46,7 +46,7 @@ AI-powered Blender addon for animation, game engine export, and automated skelet
 
 ## Installation
 
-**Direct Download:** [AInimation.zip](https://github.com/Sdsman16/AInimation/archive/refs/heads/main.zip)
+**Direct Download:** [AInimation.zip](https://github.com/Sdsman16/AInimation/releases/download/v1.0.0/AInimation.zip)
 
 1. Download the zip above
 2. Open Blender and go to `Edit > Preferences > Add-ons`
