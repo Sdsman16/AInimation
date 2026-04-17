@@ -222,6 +222,7 @@ class WeightPainter:
             bones_modified=[bone_name]
         )
 
+    @staticmethod
     def mirror_weights(axis: str = 'X', threshold: float = 0.001) -> WeightPaintResult:
         """
         Mirror weights across an axis.
@@ -301,6 +302,7 @@ class WeightPainter:
             message=f"Mirrored weights for {mirrored} vertices"
         )
 
+    @staticmethod
     def clean_weights(threshold: float = 0.01, limit: float = 1.0) -> WeightPaintResult:
         """
         Clean weight painting by removing tiny weights and normalizing.
@@ -358,6 +360,7 @@ class WeightPainter:
             bones_modified=list(bones_affected)
         )
 
+    @staticmethod
     def normalize_all_verts(bone_names: List[str] = None) -> WeightPaintResult:
         """
         Normalize all vertex weights so they sum to 1.0.

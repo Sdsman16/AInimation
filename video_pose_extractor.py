@@ -2,10 +2,14 @@
 Claude Vision API Integration for Video Frame Analysis
 
 Send video frames to Claude and get pose/position descriptions back.
+Uses direct HTTP calls to avoid external SDK dependency.
 """
-import anthropic
 import base64
-from typing import Dict, Optional
+import requests
+from typing import Dict, Optional, List
+
+ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
+ANTHROPIC_API_VERSION = "2023-06-01"
 
 
 def analyze_frame_with_claude(api_key: str, image_bytes: bytes,
@@ -42,15 +46,19 @@ Provide your analysis in this format:
 
 Be specific with angles where you can estimate them (e.g., "elbow bent at ~90 degrees", "knee slightly bent at ~15 degrees")."""
 
-    client = anthropic.Anthropic(api_key=api_key)
-
     # Encode image to base64
     image_b64 = base64.b64encode(image_bytes).decode('utf-8')
 
-    response = client.messages.create(
-        model="claude-opus-4-7",
-        max_tokens=1024,
-        messages=[
+    headers = {
+        "x-api-key": api_key,
+        "anthropic-version": ANTHROPIC_API_VERSION,
+        "content-type": "application/json",
+    }
+
+    payload = {
+        "model": "claude-sonnet-4-6",
+        "max_tokens": 1024,
+        "messages": [
             {
                 "role": "user",
                 "content": [
@@ -69,9 +77,31 @@ Be specific with angles where you can estimate them (e.g., "elbow bent at ~90 de
                 ]
             }
         ]
-    )
+    }
 
-    return parse_pose_response(response.content[0].text)
+    try:
+        response = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+
+        # Parse response - handle both newer and legacy formats
+        text = ""
+        if "content" in data:
+            for block in data.get("content", []):
+                if block.get("type") == "text":
+                    text = block.get("text", "")
+                    break
+        elif "completion" in data:
+            text = data["completion"]
+
+        return parse_pose_response(text)
+
+    except requests.exceptions.Timeout:
+        return {'error': 'Request timed out', 'raw_response': '', 'pose_type': 'unknown'}
+    except requests.exceptions.HTTPError as e:
+        return {'error': f'HTTP {e.response.status_code}', 'raw_response': str(e), 'pose_type': 'unknown'}
+    except Exception as e:
+        return {'error': str(e), 'raw_response': '', 'pose_type': 'unknown'}
 
 
 def parse_pose_response(text: str) -> Dict[str, any]:
@@ -80,6 +110,7 @@ def parse_pose_response(text: str) -> Dict[str, any]:
         'raw_response': text,
         'pose_type': 'unknown',
         'phase': 'unknown',
+        'motion_type': 'unknown',
         'notes': [],
     }
 
@@ -110,7 +141,6 @@ def parse_pose_response(text: str) -> Dict[str, any]:
     angle_keywords = ['shoulder', 'elbow', 'hip', 'knee', 'ankle', 'spine', 'head', 'torso']
     for kw in angle_keywords:
         if kw in text.lower():
-            # Extract sentences containing the keyword
             for sentence in text.split('.'):
                 if kw in sentence.lower():
                     result['notes'].append(sentence.strip())
@@ -134,7 +164,6 @@ def batch_analyze_frames(api_key: str, frames: list, progress_callback=None) -> 
 
     for i, (frame_data, timestamp) in enumerate(frames):
         try:
-            # Rate limit to avoid API throttling
             result = analyze_frame_with_claude(api_key, frame_data)
             result['timestamp'] = timestamp
             results.append(result)
@@ -200,11 +229,12 @@ def generate_blender_keyframe_commands(keyframes: list, bone_mapping: dict) -> l
         commands.append(f"bpy.context.scene.frame_set({frame})")
 
         # Generate commands based on pose type
-        if pose_data.get('pose_type') == 'walking':
+        pose_type = pose_data.get('pose_type', '').lower()
+        if 'walk' in pose_type:
             commands.extend(generate_walk_pose_commands(pose_data, bone_mapping))
-        elif pose_data.get('pose_type') == 'running':
+        elif 'run' in pose_type or 'sprint' in pose_type:
             commands.extend(generate_run_pose_commands(pose_data, bone_mapping))
-        elif pose_data.get('pose_type') == 'standing' or pose_data.get('pose_type') == 'idle':
+        elif 'idle' in pose_type or 'stand' in pose_type:
             commands.extend(generate_idle_pose_commands(pose_data, bone_mapping))
 
         commands.append("")
@@ -217,9 +247,8 @@ def generate_walk_pose_commands(pose_data: Dict, bone_mapping: Dict) -> list:
     cmds = []
     notes = pose_data.get('notes', [])
 
-    # This is simplified - real implementation would parse actual angles
     cmds.append("# Walk pose - apply based on notes")
-    for note in notes[:5]:  # Limit to 5 notes
+    for note in notes[:5]:
         note_lower = note.lower()
         if 'left arm' in note_lower or 'right arm' in note_lower:
             cmds.append(f"  # Arm: {note[:100]}")
