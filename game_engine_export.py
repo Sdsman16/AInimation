@@ -48,7 +48,7 @@ class ExportSettings:
 
     # Unity specific
     unity_use_existing_armature: bool = False
-    unity_force armature_resolution: bool = False
+    unity_force_armature_resolution: bool = False
 
     # Unreal specific
     unreal_use_file_resolution: bool = False
