@@ -182,7 +182,7 @@ class AI_PT_assistant_panel(Panel):
 
         # Video Reference Analyzer
         layout.separator()
-        layout.label(text="Video Reference:", icon='MOVIE')
+        layout.label(text="Video Reference:", icon='FILE_MOVIE')
         box = layout.box()
         box.operator("ai.analyze_video", text="Analyze Video", icon='FILE_MOVIE')
         box.operator("ai.apply_video_keyframes", text="Apply to Armature", icon='ANIM')
