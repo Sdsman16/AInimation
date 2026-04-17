@@ -31,6 +31,8 @@ def build_blender_context(context) -> dict:
             obj_info['vertex_count'] = len(obj.data.vertices)
             obj_info['face_count'] = len(obj.data.polygons)
             obj_info['edge_count'] = len(obj.data.edges)
+            # Add mesh geometry analysis for bone placement
+            obj_info['mesh_bounds'] = _get_mesh_bounds(obj)
 
         # Add bone count for armatures
         if obj.type == 'ARMATURE' and obj.data:
@@ -48,6 +50,9 @@ def build_blender_context(context) -> dict:
             'rotation': list(active.rotation_euler),
             'scale': list(active.scale),
         }
+        # Add mesh bounds for active object too
+        if active.type == 'MESH' and active.data:
+            result['active_object']['mesh_bounds'] = _get_mesh_bounds(active)
 
     # Active action
     if active and active.animation_data and active.animation_data.action:
@@ -65,6 +70,59 @@ def build_blender_context(context) -> dict:
         result['collections'].append(col.name)
 
     return result
+
+
+def _get_mesh_bounds(mesh_obj) -> dict:
+    """Get detailed mesh bounds and extremity positions."""
+    if mesh_obj.type != 'MESH' or not mesh_obj.data:
+        return {}
+
+    # Get evaluated mesh for accurate world coordinates
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    eval_obj = mesh_obj.evaluated_get(depsgraph)
+    mesh = eval_obj.to_mesh()
+
+    verts = [v.co @ mesh_obj.matrix_world for v in mesh.vertices]
+    eval_obj.to_mesh_clear()
+
+    if not verts:
+        return {}
+
+    y_vals = [v.y for v in verts]
+    z_vals = [v.z for v in verts]
+    x_vals = [v.x for v in verts]
+
+    bounds = {
+        'min_y': min(y_vals),
+        'max_y': max(y_vals),
+        'min_z': min(z_vals),
+        'max_z': max(z_vals),
+        'min_x': min(x_vals),
+        'max_x': max(x_vals),
+        'center_x': (min(x_vals) + max(x_vals)) / 2,
+        'center_z': (min(z_vals) + max(z_vals)) / 2,
+        'length_y': max(y_vals) - min(y_vals),
+        'height_z': max(z_vals) - min(z_vals),
+    }
+
+    # Find extremity positions (head, tail, feet)
+    # Head = front (max Y), Tail = back (min Y)
+    # Feet = bottom (min Z)
+    front_candidates = [v for v in verts if v.y > max(y_vals) - (max(y_vals) - min(y_vals)) * 0.1]
+    back_candidates = [v for v in verts if v.y < min(y_vals) + (max(y_vals) - min(y_vals)) * 0.1]
+    bottom_candidates = [v for v in verts if v.z < min(z_vals) + (max(z_vals) - min(z_vals)) * 0.15]
+
+    bounds['head_position'] = {
+        'y': max(y_vals),
+        'z': sum(v.z for v in front_candidates) / len(front_candidates) if front_candidates else bounds['center_z']
+    }
+    bounds['tail_position'] = {
+        'y': min(y_vals),
+        'z': sum(v.z for v in back_candidates) / len(back_candidates) if back_candidates else bounds['center_z']
+    }
+    bounds['foot_height'] = min(z_vals)
+
+    return bounds
 
 
 def get_animation_context(context) -> dict:
