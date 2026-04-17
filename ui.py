@@ -79,32 +79,38 @@ class AI_PT_assistant_panel(Panel):
             layout.label(text="Configure API key in addon preferences", icon='ERROR')
             return
 
-        # Chat history
+        # AI Chat Section
         box = layout.box()
-        box.label(text="Conversation:", icon='CHAT')
+        box.label(text="AI Chat", icon='CHAT')
 
-        if hasattr(context.scene, 'ai_chat_history'):
-            for msg in context.scene.ai_chat_history:
-                if msg.role == "user":
-                    box.label(text=f"You: {msg.content}", icon='USER')
-                else:
-                    for line in msg.content.split('\n')[:5]:  # Limit display
-                        box.label(text=f"AI: {line}", icon='ROBOT')
-                    if len(msg.content.split('\n')) > 5:
-                        box.label(text="... (truncated)", icon='INFO')
+        # Input field - multi-line text box
+        box.prop(context.scene, "ai_input_message", text="Ask the AI...", icon='GREASEPENCIL')
 
-        # Input field
-        layout.separator()
-        layout.prop(context.scene, "ai_input_message", text="", icon='GREASEPENCIL')
-        row = layout.row()
+        # Send button
+        row = box.row()
         row.operator("ai.send_message", text="Send", icon='PLAY')
         row.operator("ai.clear_history", text="Clear", icon='X')
+
+        # Chat history display
+        if hasattr(context.scene, 'ai_chat_history') and len(context.scene.ai_chat_history) > 0:
+            history_box = box.box()
+            history_box.label(text="History:", icon='COLLAPSEMENU')
+            for msg in context.scene.ai_chat_history:
+                if msg.role == "user":
+                    for line in msg.content.split('\n')[:3]:
+                        history_box.label(text=f"You: {line[:50]}", icon='USER')
+                else:
+                    for line in msg.content.split('\n')[:3]:
+                        history_box.label(text=f"AI: {line[:50]}", icon='ROBOT')
+                    if len(msg.content.split('\n')) > 3:
+                        history_box.label(text="  ... (more)", icon='INFO')
 
         # Animation tools
         layout.separator()
         layout.label(text="Animation Tools:", icon='ACTION')
-        layout.operator("ai.analyze_animation", text="Analyze Loop", icon='PLAY')
-        layout.operator("ai.list_actions", text="List Actions", icon='LIST')
+        row = layout.row(align=True)
+        row.operator("ai.analyze_animation", text="Analyze Loop", icon='PLAY')
+        row.operator("ai.list_actions", text="List Actions", icon='LIST')
 
         # Dinosaur animation tools
         layout.separator()
