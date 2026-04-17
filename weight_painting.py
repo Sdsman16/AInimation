@@ -533,6 +533,19 @@ def transfer_weights_from_source(source_mesh: bpy.types.Object,
     return WeightPaintResult(False, "Data transfer failed - manual weight painting required")
 
 
+# Module-level wrapper functions so these can be imported directly
+def clean_weights(threshold: float = 0.01, limit: float = 1.0) -> WeightPaintResult:
+    return WeightPainter.clean_weights(threshold=threshold, limit=limit)
+
+
+def mirror_weights(axis: str = 'X', threshold: float = 0.001) -> WeightPaintResult:
+    return WeightPainter.mirror_weights(axis=axis, threshold=threshold)
+
+
+def normalize_all_verts(bone_names: list = None) -> WeightPaintResult:
+    return WeightPainter.normalize_all_verts(bone_names=bone_names)
+
+
 class BoneEnvelopeEditor:
     """Edit bone envelope settings for automatic weighting."""
 
