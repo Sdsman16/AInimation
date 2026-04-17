@@ -45,6 +45,11 @@ def register():
         description="Conversation history",
     )
 
+    bpy.types.Scene.ai_is_processing = bpy.props.BoolProperty(
+        name="AI Processing",
+        default=False,
+    )
+
     # Operators
     operators.register()
 
@@ -61,6 +66,8 @@ def unregister():
     operators.unregister()
 
     # Properties
+    if hasattr(bpy.types.Scene, "ai_is_processing"):
+        del bpy.types.Scene.ai_is_processing
     if hasattr(bpy.types.Scene, "ai_chat_history"):
         del bpy.types.Scene.ai_chat_history
     if hasattr(bpy.types.Scene, "ai_input_message"):

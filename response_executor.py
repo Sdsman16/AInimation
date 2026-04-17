@@ -227,13 +227,18 @@ class ResponseExecutor:
                     success_count += 1
                 else:
                     fail_count += 1
-                    print(f"Command failed: {command}")
-                    print(f"Errors: {self.errors[-3:]}")  # Print last 3 errors
-
-        if fail_count > 0:
-            print(f"AI Response was:\n{response[:500]}...")  # Print first 500 chars of response
 
         return success_count, fail_count
+
+    def validate_rig(self, arm_name: str, expected_bones: list) -> tuple:
+        """Validate that all expected bones were created. Returns (missing_count, missing_bones)."""
+        arm_obj = bpy.data.objects.get(arm_name)
+        if not arm_obj or arm_obj.type != 'ARMATURE':
+            return len(expected_bones), expected_bones
+
+        existing = set(arm_obj.data.bones.keys())
+        missing = [b for b in expected_bones if b not in existing]
+        return len(missing), missing
 
     def get_errors(self) -> list:
         return self.errors

@@ -9,7 +9,7 @@ class AI_OT_send_message(bpy.types.Operator):
     """Send message to AI"""
     bl_idname = "ai.send_message"
     bl_label = "Send"
-    bl_options = {'REGISTER'}
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         prefs = bpy.context.preferences.addons.get("AInimation")
@@ -22,17 +22,19 @@ class AI_OT_send_message(bpy.types.Operator):
             self.report({'ERROR'}, "Please set API key in addon preferences")
             return {'FINISHED'}
 
-        from .ai_client import create_client
-        from .context_builder import build_blender_context
-        from .response_executor import ResponseExecutor
-
         message = context.scene.ai_input_message
         if not message.strip():
             return {'FINISHED'}
 
-        blender_context = build_blender_context(context)
+        # Set processing flag to block new requests
+        context.scene.ai_is_processing = True
 
         try:
+            from .ai_client import create_client
+            from .context_builder import build_blender_context
+            from .response_executor import ResponseExecutor
+
+            blender_context = build_blender_context(context)
             client = create_client(api_key)
             model = prefs.preferences.model
             response = client.send_message(message, blender_context, model)
@@ -50,7 +52,7 @@ class AI_OT_send_message(bpy.types.Operator):
             # Clear input
             context.scene.ai_input_message = ""
 
-            # Try to execute commands
+            # Execute commands
             executor = ResponseExecutor()
             success, failures = executor.parse_and_execute(response)
             if failures > 0:
@@ -58,6 +60,9 @@ class AI_OT_send_message(bpy.types.Operator):
 
         except Exception as e:
             self.report({'ERROR'}, f"AI Error: {str(e)}")
+
+        finally:
+            context.scene.ai_is_processing = False
 
         return {'FINISHED'}
 
@@ -77,6 +82,13 @@ class AI_PT_assistant_panel(Panel):
         prefs = bpy.context.preferences.addons.get("AInimation")
         if not prefs or not prefs.preferences.api_key:
             layout.label(text="Configure API key in addon preferences", icon='ERROR')
+            return
+
+        # Processing overlay
+        if getattr(context.scene, 'ai_is_processing', False):
+            box = layout.box()
+            box.label(text="AI is thinking...", icon='TIME')
+            box.label(text="Please wait...")
             return
 
         # AI Chat Section
