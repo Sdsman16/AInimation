@@ -81,29 +81,54 @@ class AI_PT_assistant_panel(Panel):
 
         # AI Chat Section
         box = layout.box()
-        box.label(text="AI Chat", icon='TEXT')
+        box.label(text="Chat with AI", icon='TEXT')
 
-        # Input field - multi-line text box
-        box.prop(context.scene, "ai_input_message", text="Ask the AI...", icon='GREASEPENCIL')
+        # Input field
+        box.prop(context.scene, "ai_input_message", text="", icon='GREASEPENCIL')
 
-        # Send button
+        # Send and Clear buttons
         row = box.row()
         row.operator("ai.send_message", text="Send", icon='PLAY')
         row.operator("ai.clear_history", text="Clear", icon='X')
 
-        # Chat history display
+        # Chat history display - scrollable column
         if hasattr(context.scene, 'ai_chat_history') and len(context.scene.ai_chat_history) > 0:
             history_box = box.box()
             history_box.label(text="History:", icon='COLLAPSEMENU')
+
             for msg in context.scene.ai_chat_history:
                 if msg.role == "user":
-                    for line in msg.content.split('\n')[:3]:
-                        history_box.label(text=f"You: {line[:50]}", icon='USER')
+                    # User message - right aligned style
+                    user_box = history_box.box()
+                    user_box.label(text="You:", icon='USER')
+                    for line in msg.content.split('\n'):
+                        user_box.label(text=f"  {line[:60]}", icon='SETTINGS')
                 else:
-                    for line in msg.content.split('\n')[:3]:
-                        history_box.label(text=f"AI: {line[:50]}", icon='INFO')
-                    if len(msg.content.split('\n')) > 3:
-                        history_box.label(text="  ... (more)", icon='INFO')
+                    # AI message - left aligned style
+                    ai_box = history_box.box()
+                    ai_box.label(text="Assistant:", icon='INFO')
+
+                    # Check for commands in response
+                    has_commands = 'BLENDER_CMD:' in msg.content or \
+                                   'CREATE_OBJECT:' in msg.content or \
+                                   'SET_FRAME:' in msg.content or \
+                                   'ADD_KEYFRAME:' in msg.content
+
+                    lines = msg.content.split('\n')
+                    for line in lines:
+                        stripped = line.strip()
+                        if stripped.startswith('BLENDER_CMD:') or \
+                           stripped.startswith('CREATE_OBJECT:') or \
+                           stripped.startswith('SET_FRAME:') or \
+                           stripped.startswith('ADD_KEYFRAME:') or \
+                           stripped.startswith('MODIFY_PROPERTY:'):
+                            # Highlighted command
+                            ai_box.label(text=f"  {stripped}", icon='EXECUTE')
+                        else:
+                            ai_box.label(text=f"  {line[:60]}", icon='SETTINGS')
+
+                    if has_commands:
+                        ai_box.label(text="  ↑ Commands executed", icon='ARMATURE_DATA')
 
         # Animation tools
         layout.separator()
