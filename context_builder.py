@@ -73,7 +73,7 @@ def build_blender_context(context) -> dict:
 
 
 def _get_mesh_bounds(mesh_obj) -> dict:
-    """Get detailed mesh bounds and extremity positions."""
+    """Get detailed mesh bounds, extremity positions, and sampled vertices."""
     if mesh_obj.type != 'MESH' or not mesh_obj.data:
         return {}
 
@@ -92,6 +92,9 @@ def _get_mesh_bounds(mesh_obj) -> dict:
     z_vals = [v.z for v in verts]
     x_vals = [v.x for v in verts]
 
+    y_range = max(y_vals) - min(y_vals)
+    z_range = max(z_vals) - min(z_vals)
+
     bounds = {
         'min_y': min(y_vals),
         'max_y': max(y_vals),
@@ -101,16 +104,14 @@ def _get_mesh_bounds(mesh_obj) -> dict:
         'max_x': max(x_vals),
         'center_x': (min(x_vals) + max(x_vals)) / 2,
         'center_z': (min(z_vals) + max(z_vals)) / 2,
-        'length_y': max(y_vals) - min(y_vals),
-        'height_z': max(z_vals) - min(z_vals),
+        'length_y': y_range,
+        'height_z': z_range,
     }
 
     # Find extremity positions (head, tail, feet)
-    # Head = front (max Y), Tail = back (min Y)
-    # Feet = bottom (min Z)
-    front_candidates = [v for v in verts if v.y > max(y_vals) - (max(y_vals) - min(y_vals)) * 0.1]
-    back_candidates = [v for v in verts if v.y < min(y_vals) + (max(y_vals) - min(y_vals)) * 0.1]
-    bottom_candidates = [v for v in verts if v.z < min(z_vals) + (max(z_vals) - min(z_vals)) * 0.15]
+    front_candidates = [v for v in verts if v.y > max(y_vals) - y_range * 0.1]
+    back_candidates = [v for v in verts if v.y < min(y_vals) + y_range * 0.1]
+    bottom_candidates = [v for v in verts if v.z < min(z_vals) + z_range * 0.15]
 
     bounds['head_position'] = {
         'y': max(y_vals),
@@ -122,7 +123,43 @@ def _get_mesh_bounds(mesh_obj) -> dict:
     }
     bounds['foot_height'] = min(z_vals)
 
+    # Sample vertices along the body for shape visualization
+    bounds['sampled_profile'] = _sample_mesh_profile(verts, bounds)
+
     return bounds
+
+
+def _sample_mesh_profile(verts: list, bounds: dict) -> list:
+    """Sample vertices along the body to show shape profile to AI."""
+    if not verts or len(verts) < 100:
+        return []
+
+    # Sample at key positions along Y axis (front to back)
+    samples = []
+    positions = [0.0, 0.15, 0.3, 0.5, 0.7, 0.85, 1.0]  # 0=front, 1=back
+
+    y_range = bounds['max_y'] - bounds['min_y']
+    if y_range <= 0:
+        return []
+
+    for pos in positions:
+        y_target = bounds['max_y'] - pos * y_range
+        # Find vertices near this Y position
+        candidates = [v for v in verts if abs(v.y - y_target) < y_range * 0.1]
+        if len(candidates) >= 3:
+            # Calculate width (X extent) and height (Z extent) at this position
+            x_at_pos = [v.x for v in candidates]
+            z_at_pos = [v.z for v in candidates]
+            samples.append({
+                'position': pos,
+                'y_approx': y_target,
+                'width': max(x_at_pos) - min(x_at_pos),
+                'height': max(z_at_pos) - min(z_at_pos),
+                'z_min': min(z_at_pos),
+                'z_max': max(z_at_pos),
+            })
+
+    return samples
 
 
 def get_animation_context(context) -> dict:

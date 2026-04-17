@@ -187,18 +187,25 @@ When rigging a mesh, you MUST use the mesh_bounds data from context:
 - mesh_bounds.tail_position = {'y': backmost, 'z': average height of back vertices}
 - mesh_bounds.foot_height = minimum Z (ground level)
 
-For a dinosaur mesh:
-- Pelvis should be at: center_x, somewhere between head_y and tail_y
-- Spine bones should go from pelvis toward head (use head_position.y)
-- Tail bones should extend from pelvis toward tail_position.y
-- Neck should extend from spine to head_position.y
-- Head at head_position.y, head_position.z
-- Legs should extend DOWN to mesh_bounds.foot_height
+MESH PROFILE DATA - Understanding the shape:
+The mesh_bounds.sampled_profile shows cross-sections along the body:
+- position 0.0 = front (head area), position 1.0 = back (tail area)
+- width = how wide the model is at that point
+- z_min / z_max = bottom/top of mesh at that position
 
-Example: If mesh_bounds shows head_position.y=3.5, tail_position.y=-2.0, foot_height=0.0
-Then bone at pelvis should be at roughly: center_x, 0.5, 2.0 (midway, at hip height)
-Spine should go from y=0.5 toward y=3.5
-Tail should extend from y=0.5 toward y=-2.0
+Example profile interpretation:
+{"position": 0.0, "width": 0.5, "height": 0.8, "z_min": 2.0, "z_max": 2.8} = head is narrow (0.5 wide), tall (0.8)
+{"position": 0.5, "width": 2.0, "height": 1.5, "z_min": 1.0, "z_max": 2.5} = body is wide (2.0), taller
+
+Use this to place bones at correct heights and positions along the body.
+
+For a dinosaur mesh:
+- Pelvis at position ~0.35, where width is moderate
+- Spine bones follow the profile from pelvis toward head
+- Tail bones extend from pelvis toward tail
+- Neck extends from spine to head
+- Head at head_position.y
+- Legs should extend DOWN to foot_height
 
 Use ACTUAL coordinates from mesh_bounds - do NOT guess or use generic values.
 
