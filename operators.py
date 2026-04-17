@@ -52,7 +52,7 @@ class AI_OT_chat(Operator):
     message: bpy.props.StringProperty(name="Message", default="")
 
     def execute(self, context):
-        prefs = bpy.context.preferences.addons.get("ai_assistant_blender")
+        prefs = bpy.context.preferences.addons.get("AInimation")
         if not prefs:
             self.report({'ERROR'}, "Addon not configured")
             return {'FINISHED'}
@@ -371,7 +371,7 @@ class AI_OT_analyze_video(Operator):
     filepath: bpy.props.StringProperty(name="Video File", subtype='FILE_PATH')
 
     def execute(self, context):
-        prefs = bpy.context.preferences.addons.get("ai_assistant_blender")
+        prefs = bpy.context.preferences.addons.get("AInimation")
         if not prefs or not prefs.preferences.api_key:
             self.report({'ERROR'}, "Set API key in addon preferences first")
             return {'FINISHED'}
@@ -423,7 +423,7 @@ class AI_OT_apply_video_animation(Operator):
     video_path: bpy.props.StringProperty(name="Video Path", default="")
 
     def execute(self, context):
-        prefs = bpy.context.preferences.addons.get("ai_assistant_blender")
+        prefs = bpy.context.preferences.addons.get("AInimation")
         if not prefs or not prefs.preferences.api_key:
             self.report({'ERROR'}, "Set API key in addon preferences first")
             return {'FINISHED'}
