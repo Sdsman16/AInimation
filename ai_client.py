@@ -19,6 +19,7 @@ class AIClient:
         """Send message to Claude with Blender context."""
 
         system_prompt = self._build_system_prompt(context)
+        system_prompt += self._build_command_prompt()
 
         # Add dinosaur context if relevant
         anim_context = get_animation_context(bpy.context)
@@ -167,12 +168,35 @@ class AIClient:
         lines.append("\n\nYou can generate animations for these armatures:")
         lines.append("- Dinosaurs: ai.generate_dino_animation (bipedal/quadrupedal)")
         lines.append("- Humans: ai.generate_human_animation (walk/run/idle)")
-        lines.append("\nAvailable knowledge bases:")
-        lines.append("- Dinosaur locomotion: bipedal (raptor/T-Rex style), quadrupedal (sauropod style)")
-        lines.append("- Human locomotion: walk cycles, run cycles, idle variations")
         lines.append("- Video reference analysis: ai.analyze_video + ai.apply_video_keyframes")
 
         return "\n".join(lines)
+
+    def _build_command_prompt(self) -> str:
+        """Build prompt section about executing commands."""
+        return """
+When you want to perform an action in Blender, you MUST use these command formats:
+
+CREATE objects:
+BLENDER_CMD: CREATE_OBJECT:MESH:ObjectName
+
+MODIFY properties:
+BLENDER_CMD: MODIFY_PROPERTY:ObjectName:property_name:value
+
+SET frames:
+BLENDER_CMD: SET_FRAME:frame_number
+
+ADD keyframes:
+BLENDER_CMD: ADD_KEYFRAME:ObjectName:property_name:frame_number
+
+Example: To create a cube named "MyCube", respond with:
+BLENDER_CMD: CREATE_OBJECT:MESH:MyCube
+
+Example: To set frame 60, respond with:
+BLENDER_CMD: SET_FRAME:60
+
+Only use BLENDER_CMD: when you want to actually modify the Blender scene.
+"""
 
 
 def create_client(api_key: str) -> AIClient:
