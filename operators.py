@@ -366,7 +366,7 @@ class AI_OT_analyze_video(Operator):
     """Analyze video reference for animation"""
     bl_idname = "ai.analyze_video"
     bl_label = "Analyze Video Reference"
-    bl_options = {'REGISTER', 'FILE_PATH'}
+    bl_options = {'REGISTER'}
 
     filepath: bpy.props.StringProperty(name="Video File", subtype='FILE_PATH')
 
