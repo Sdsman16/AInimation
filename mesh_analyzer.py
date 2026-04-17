@@ -124,8 +124,12 @@ def detect_symmetry(mesh_obj: bpy.types.Object) -> float:
     depsgraph = bpy.context.evaluated_depsgraph_get()
     eval_obj = mesh_obj.evaluated_get(depsgraph)
     mesh = eval_obj.to_mesh()
+    try:
+        verts = [mesh.vertices[i].co @ mesh_obj.matrix_world for i in range(len(mesh.vertices))]
+    finally:
+        eval_obj.to_mesh_clear()
 
-    verts = [mesh.vertices[i].co @ mesh_obj.matrix_world for i in range(len(mesh.vertices))]
+    verts = list(verts)
 
     # Find center on X axis
     x_coords = [v.x for v in verts]
@@ -150,7 +154,6 @@ def detect_symmetry(mesh_obj: bpy.types.Object) -> float:
             if has_match:
                 matched += 1
 
-    mesh.release()
     return matched / total if total > 0 else 0.5
 
 

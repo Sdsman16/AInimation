@@ -12,7 +12,7 @@ class AI_OT_send_message(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        prefs = bpy.context.preferences.addons.get("ai_assistant_blender")
+        prefs = bpy.context.preferences.addons.get("AInimation")
         if not prefs:
             self.report({'ERROR'}, "Addon not configured")
             return {'FINISHED'}
@@ -74,7 +74,7 @@ class AI_PT_assistant_panel(Panel):
         layout = self.layout
 
         # Check API key
-        prefs = bpy.context.preferences.addons.get("ai_assistant_blender")
+        prefs = bpy.context.preferences.addons.get("AInimation")
         if not prefs or not prefs.preferences.api_key:
             layout.label(text="Configure API key in addon preferences", icon='ERROR')
             return

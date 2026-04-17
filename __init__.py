@@ -7,7 +7,7 @@ modifications, and animation analysis using Claude models.
 bl_info = {
     "name": "AInimation",
     "author": "Your Name",
-    "version": (1, 0, 1),
+    "version": (1, 0, 7),
     "blender": (4, 0, 0),
     "location": "View3D > Sidebar > AI Assistant",
     "description": "Chat with Claude AI to query and modify your Blender scene",
