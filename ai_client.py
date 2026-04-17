@@ -68,6 +68,44 @@ class AIClient:
         except Exception as e:
             return f"Error: {str(e)}"
 
+    def validate_key(self) -> tuple:
+        """Validate API key by making a simple request. Returns (success, message)."""
+        try:
+            import requests
+        except ImportError:
+            return False, "requests module not available"
+
+        headers = {
+            "x-api-key": self.api_key,
+            "anthropic-version": ANTHROPIC_API_VERSION,
+            "content-type": "application/json",
+        }
+
+        payload = {
+            "model": "claude-haiku-4-5",
+            "max_tokens": 10,
+            "messages": [{"role": "user", "content": "hi"}]
+        }
+
+        try:
+            response = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=15)
+            if response.status_code == 200:
+                return True, "API key is valid"
+            elif response.status_code == 401:
+                return False, "Invalid API key"
+            elif response.status_code == 403:
+                return False, "API key forbidden - check permissions"
+            else:
+                return False, f"Error: HTTP {response.status_code}"
+        except requests.exceptions.Timeout:
+            return False, "Request timed out"
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                return False, "Invalid API key"
+            return False, f"HTTP error: {e.response.status_code}"
+        except Exception as e:
+            return False, f"Error: {str(e)}"
+
     def _build_system_prompt(self, context: dict) -> str:
         """Build system prompt with current Blender state."""
 
