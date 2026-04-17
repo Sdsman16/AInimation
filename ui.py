@@ -81,7 +81,7 @@ class AI_PT_assistant_panel(Panel):
 
         # AI Chat Section
         box = layout.box()
-        box.label(text="AI Chat", icon='CHAT')
+        box.label(text="AI Chat", icon='TEXT')
 
         # Input field - multi-line text box
         box.prop(context.scene, "ai_input_message", text="Ask the AI...", icon='GREASEPENCIL')
