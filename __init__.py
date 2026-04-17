@@ -25,10 +25,13 @@ class ChatMessageItem(bpy.types.PropertyGroup):
 
 def register():
     """Register all addon classes and properties."""
+    # Register PropertyGroup first (needed by CollectionProperty)
+    bpy.utils.register_class(ChatMessageItem)
+
     # Preferences
     preferences.register()
 
-    # Properties (must register before operators/ui)
+    # Properties (must register ChatMessageItem before this)
     bpy.types.Scene.ai_input_message = bpy.props.StringProperty(
         name="AI Message",
         description="Message to send to AI assistant",
@@ -64,6 +67,9 @@ def unregister():
 
     # Preferences
     preferences.unregister()
+
+    # Unregister PropertyGroup last
+    bpy.utils.unregister_class(ChatMessageItem)
 
 
 if __name__ == "__main__":
