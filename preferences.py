@@ -35,3 +35,11 @@ class AIAssistantPreferences(bpy.types.AddonPreferences):
 def get_preferences():
     """Get addon preferences."""
     return bpy.context.preferences.addons.get(__name__.split(".")[0])
+
+
+def register():
+    bpy.utils.register_class(AIAssistantPreferences)
+
+
+def unregister():
+    bpy.utils.unregister_class(AIAssistantPreferences)
