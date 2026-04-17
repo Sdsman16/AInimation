@@ -123,7 +123,7 @@ class AI_PT_assistant_panel(Panel):
                            stripped.startswith('ADD_KEYFRAME:') or \
                            stripped.startswith('MODIFY_PROPERTY:'):
                             # Highlighted command
-                            ai_box.label(text=f"  {stripped}", icon='EXECUTE')
+                            ai_box.label(text=f"  {stripped}", icon='PLAY')
                         else:
                             ai_box.label(text=f"  {line[:60]}", icon='SETTINGS')
 
@@ -135,7 +135,7 @@ class AI_PT_assistant_panel(Panel):
         layout.label(text="Animation Tools:", icon='ACTION')
         row = layout.row(align=True)
         row.operator("ai.analyze_animation", text="Analyze Loop", icon='PLAY')
-        row.operator("ai.list_actions", text="List Actions", icon='LIST')
+        row.operator("ai.list_actions", text="List Actions", icon='ACTION')
 
         # Dinosaur animation tools
         layout.separator()
@@ -201,7 +201,7 @@ class AI_PT_assistant_panel(Panel):
 
         # Weight Painting Tools
         layout.separator()
-        layout.label(text="Weight Painting:", icon='BRUSH_WEIGHT')
+        layout.label(text="Weight Painting:", icon='MODIFIER')
         box = layout.box()
         box.label(text="Auto Weight:", icon='OPTIONS')
         box.operator("ai.auto_weight", text="Auto from Distance", icon='OPTIONS')
@@ -250,14 +250,14 @@ class AI_PT_assistant_panel(Panel):
         layout.separator()
         layout.label(text="Engine Setup Help:", icon='QUESTION')
         box = layout.box()
-        box.label(text="Unity Setup:", icon='GAME')
+        box.label(text="Unity Setup:", icon='MODIFIER')
         box.label(text="• Root bone needed for Humanoid", icon='INFO')
         box.label(text="• FBX: Y-forward, Z-up", icon='INFO')
         box.label(text="• Animation: Bake every frame", icon='INFO')
         box.label(text="• Scale: 100x for UE to Unity", icon='INFO')
 
         box = layout.box()
-        box.label(text="Unreal Setup:", icon='GAME')
+        box.label(text="Unreal Setup:", icon='MODIFIER')
         box.label(text="• Pelvis as root (no extra root)", icon='INFO')
         box.label(text="• FBX: X-forward, Z-up", icon='INFO')
         box.label(text="• Animation: Disable const tracks", icon='INFO')
