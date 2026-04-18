@@ -14,6 +14,7 @@ def build_blender_context(context) -> dict:
         'active_object': None,
         'active_action': None,
         'collections': [],
+        'mesh_for_rigging': None,  # Dedicated field for rigging tasks
     }
 
     # Selected objects
@@ -32,7 +33,15 @@ def build_blender_context(context) -> dict:
             obj_info['face_count'] = len(obj.data.polygons)
             obj_info['edge_count'] = len(obj.data.edges)
             # Add mesh geometry analysis for bone placement
-            obj_info['mesh_bounds'] = _get_mesh_bounds(obj)
+            mesh_bounds = _get_mesh_bounds(obj)
+            obj_info['mesh_bounds'] = mesh_bounds
+            # If this is the first/largest mesh, mark it as the rigging target
+            if result['mesh_for_rigging'] is None or len(obj.data.vertices) > result['mesh_for_rigging'].get('vertex_count', 0):
+                result['mesh_for_rigging'] = {
+                    'name': obj.name,
+                    'vertex_count': len(obj.data.vertices),
+                }
+                result['mesh_for_rigging'].update(mesh_bounds)
 
         # Add bone count for armatures
         if obj.type == 'ARMATURE' and obj.data:

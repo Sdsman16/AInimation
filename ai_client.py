@@ -127,6 +127,30 @@ class AIClient:
                 if obj.get('vertex_count'):
                     blender_info.append(f"  Vertices: {obj['vertex_count']}")
 
+        # Dedicated mesh for rigging (when user asks to rig a mesh)
+        mesh_for_rigging = context.get('mesh_for_rigging')
+        if mesh_for_rigging and mesh_for_rigging.get('name'):
+            blender_info.append("\n=== MESH FOR RIGGING ===")
+            blender_info.append(f"Name: {mesh_for_rigging['name']}")
+            blender_info.append(f"Vertex Count: {mesh_for_rigging.get('vertex_count', 'unknown')}")
+            blender_info.append(f"Y Range: {mesh_for_rigging.get('min_y', '?')} to {mesh_for_rigging.get('max_y', '?')}")
+            blender_info.append(f"Z Range (height): {mesh_for_rigging.get('min_z', '?')} to {mesh_for_rigging.get('max_z', '?')}")
+            blender_info.append(f"Center X: {mesh_for_rigging.get('center_x', '?')}")
+            blender_info.append(f"Length: {mesh_for_rigging.get('length_y', '?')}")
+            blender_info.append(f"Height: {mesh_for_rigging.get('height_z', '?')}")
+            if mesh_for_rigging.get('head_position'):
+                blender_info.append(f"Head Position: Y={mesh_for_rigging['head_position']['y']}, Z={mesh_for_rigging['head_position']['z']}")
+            if mesh_for_rigging.get('tail_position'):
+                blender_info.append(f"Tail Position: Y={mesh_for_rigging['tail_position']['y']}, Z={mesh_for_rigging['tail_position']['z']}")
+            if mesh_for_rigging.get('foot_height'):
+                blender_info.append(f"Foot Height (min Z): {mesh_for_rigging['foot_height']}")
+            if mesh_for_rigging.get('narrow_end'):
+                blender_info.append(f"Orientation: {mesh_for_rigging['narrow_end']} is narrow end (head/tail), {mesh_for_rigging['wide_end']} is wide end (body)")
+            if mesh_for_rigging.get('sampled_profile'):
+                blender_info.append("\nBody Profile (7 cross-sections from front to back):")
+                for p in mesh_for_rigging['sampled_profile']:
+                    blender_info.append(f"  pos {p['position']}: width={p['width']}, height={p['height']}, zone={p['zone']}")
+
         # Active object
         active = context.get('active_object')
         if active:
@@ -178,52 +202,22 @@ class AIClient:
 You are a Blender command executor. Your ONLY job is to fulfill user requests by issuing commands.
 You do NOT explain, plan, chat, or elaborate. You only execute.
 
-MESH ANALYSIS FOR BONE PLACEMENT:
-When rigging a mesh, use this data:
-
-BOUNDS:
-- mesh_bounds.min_y / max_y = front/back (Y axis = front to back in Blender)
-- mesh_bounds.min_z / max_z = bottom/top (Z axis = up/down)
-- mesh_bounds.center_x = model center on X axis
-- mesh_bounds.head_position.y = front-most vertex Y (use for head bone)
-- mesh_bounds.tail_position.y = back-most vertex Y (use for tail bones)
-- mesh_bounds.foot_height = lowest Z point (ground level for legs)
-
-ORIENTATION DETECTION:
-- narrow_end: which end (front/back) is narrower - this is likely head or tail
-- wide_end: which end is wider - typically body/torso
-- limb_attach_y: Y position where legs typically attach
-- limb_attach_confidence: how certain we are (0-1, higher = more certain)
-
-IMPORTANT: When narrow_end='front', position 0.0 is the HEAD
-When narrow_end='back', position 1.0 is the HEAD
-
-Use narrow_end to determine which direction is head vs tail.
-
-PROFILE DATA (7 cross-sections from front=0.0 to back=1.0):
-Each profile entry contains:
-- position: 0.0=front, 1.0=back
-- y_approx: actual Y coordinate
-- width: how wide model is at this point
-- height: total Z height at this point
-- z_min: bottom Z at this point (use for foot/leg bone endpoints)
-- z_max: top Z at this point
-- zone: body region (head/neck/spine_pelvis/tail_base/tail_tip)
-- left_ground_z: ground height on left side for leg bone height
+CRITICAL: When user asks to rig, bone, or add skeleton to ANY mesh, you MUST use the mesh_for_rigging data from context.
+The MESH FOR RIGGING section contains all geometry data for the selected mesh - use it automatically.
 
 BONE PLACEMENT RULES:
-1. HEAD: At narrow_end position, use head_position.y for Y, z_max for bone height
-2. NECK: position 0.15-0.25, connect head to spine
+1. HEAD: At narrow_end position (check narrow_end field to know which is head)
+2. NECK: position 0.15-0.25 along body, connect head to spine
 3. SPINE/PELVIS: position 0.4-0.6, widest part of body
 4. TAIL: position 0.7-1.0, gradually narrows
-5. LEGS: Must reach down to foot_height (min_z), place thigh/shin/foot bones at correct Z levels
+5. LEGS: Must reach down to foot_height (min_z from mesh_for_rigging)
 
-IMPORTANT - Z COORDINATES FOR LEGS:
-- thigh bone should be at z_min + (body_height * 0.6) roughly
-- shin bone should be at z_min + (body_height * 0.3)
-- foot bone should have tail at foot_height (min_z)
+For Z coordinates:
+- thigh bone: at hip height (z_min + total_height * 0.6)
+- shin bone: at knee height (z_min + total_height * 0.3)
+- foot bone: tail at foot_height (min_z)
 
-Use ACTUAL values from mesh_bounds for EVERY coordinate.
+Use ACTUAL values from mesh_for_rigging for EVERY coordinate. Do NOT guess.
 
 Command formats:
 BLENDER_CMD: CREATE_OBJECT:MESH:ObjectName
