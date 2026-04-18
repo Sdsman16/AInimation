@@ -113,7 +113,11 @@ def analyze_mesh(mesh_obj: bpy.types.Object) -> DinoMeshAnalysis:
 
     # Calculate proportions
     result.proportions = calculate_proportions(vertices, extremities, center_x)
-    result.estimated_height = max(e.y for e in extremities.get('back_limbs', [Vector((0, 0, 0))]))
+    back_limbs = extremities.get('back_limbs', [])
+    if back_limbs:
+        result.estimated_height = max(e.y for e in back_limbs)
+    else:
+        result.estimated_height = 0.0
 
     bm.free()
     return result
@@ -131,8 +135,13 @@ def detect_symmetry(mesh_obj: bpy.types.Object) -> float:
 
     verts = list(verts)
 
+    if not verts:
+        return 0.5
+
     # Find center on X axis
     x_coords = [v.x for v in verts]
+    if not x_coords:
+        return 0.5
     center_x = (min(x_coords) + max(x_coords)) / 2
 
     # Mirror matching test - find pairs within tolerance
@@ -239,7 +248,13 @@ def identify_segments(vertices: List[Vector], extremities: Dict, center_x: float
         return segments
 
     y_vals = sorted(set(v.y for v in vertices))
+    if len(y_vals) < 2:
+        return segments
+
     y_range = y_vals[-1] - y_vals[0]
+    if y_range <= 0:
+        return segments
+
     bucket_size = y_range / 8
 
     y_buckets = {}
@@ -248,6 +263,9 @@ def identify_segments(vertices: List[Vector], extremities: Dict, center_x: float
         if bucket not in y_buckets:
             y_buckets[bucket] = []
         y_buckets[bucket].append(v)
+
+    if not y_buckets:
+        return segments
 
     # Map buckets to segments
     for bucket, verts in y_buckets.items():
